@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hannah's Day</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#141118;--paper:#FFF8E7;--pow:#FF4D6D;--zap:#FFC93C;
+    --cool:#3D9DF6;--done:#2BB673;--panel-shadow:6px 6px 0 var(--ink);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(var(--ink) .5px,transparent .5px);
+    background-size:14px 14px;
+    font-family:'Nunito',system-ui,sans-serif;color:var(--ink);
+    min-height:100vh;padding:20px 16px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+
+  header{
+    background:var(--zap);border:4px solid var(--ink);box-shadow:var(--panel-shadow);
+    padding:18px 20px 16px;margin-bottom:18px;transform:rotate(-1deg);
+  }
+  h1{font-family:'Bangers',cursive;font-size:clamp(2.4rem,9vw,3.4rem);letter-spacing:2px;line-height:1;text-shadow:3px 3px 0 var(--paper)}
+  .date{font-weight:900;text-transform:uppercase;letter-spacing:1.5px;font-size:.78rem;margin-top:6px}
+
+  .tabs{display:flex;gap:10px;margin-bottom:22px}
+  .tab{
+    flex:1;font-family:'Bangers',cursive;font-size:1.25rem;letter-spacing:1px;padding:10px;
+    background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+    cursor:pointer;text-align:center;transition:transform .1s,box-shadow .1s,background .2s;
+  }
+  .tab.active{background:var(--cool);color:#fff}
+  .tab:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+
+  .view{display:none}.view.on{display:block}
+
+  .meter{display:flex;gap:5px;margin:0 0 22px;padding:0 2px}
+  .pip{flex:1;height:14px;border:3px solid var(--ink);background:var(--paper);transition:background .25s}
+  .pip.lit{background:var(--done)}
+
+  ul{list-style:none;display:flex;flex-direction:column;gap:14px}
+  li{
+    display:flex;align-items:center;gap:14px;background:#fff;border:4px solid var(--ink);
+    box-shadow:var(--panel-shadow);padding:14px 16px;cursor:pointer;user-select:none;
+    transition:transform .12s,box-shadow .12s,background .2s;
+  }
+  li:nth-child(even){transform:rotate(.5deg)}li:nth-child(odd){transform:rotate(-.4deg)}
+  li:active{transform:translate(3px,3px) rotate(0);box-shadow:3px 3px 0 var(--ink)}
+  .box{flex:0 0 34px;height:34px;border:4px solid var(--ink);background:var(--paper);display:grid;place-items:center;font-family:'Bangers',cursive;font-size:1.6rem;color:transparent;line-height:1}
+  .task{font-weight:900;font-size:1.08rem;line-height:1.25}
+  .mins{display:block;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:1px;opacity:.55;margin-top:2px}
+  li.done{background:var(--done);color:#fff}
+  li.done .box{background:#fff;color:var(--ink)}
+  li.done .task{text-decoration:line-through;text-decoration-thickness:3px}
+  li.done .mins{opacity:.8}
+
+  .finish{margin-top:26px;background:var(--pow);color:#fff;border:4px solid var(--ink);box-shadow:var(--panel-shadow);padding:22px;text-align:center;font-family:'Bangers',cursive;font-size:2rem;letter-spacing:2px;transform:rotate(1.2deg) scale(.9);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;text-shadow:3px 3px 0 var(--ink)}
+  .finish.show{opacity:1;transform:rotate(-1.5deg) scale(1)}
+
+  .streaks{display:flex;gap:12px;margin-bottom:20px}
+  .streak{flex:1;background:var(--pow);color:#fff;border:4px solid var(--ink);box-shadow:var(--panel-shadow);padding:14px 10px;text-align:center}
+  .streak.alt{background:var(--cool)}
+  .streak .num{font-family:'Bangers',cursive;font-size:2.6rem;line-height:1;text-shadow:2px 2px 0 var(--ink)}
+  .streak .lbl{font-weight:900;text-transform:uppercase;letter-spacing:1px;font-size:.66rem;margin-top:4px}
+
+  .rangebar{display:flex;align-items:center;justify-content:space-between;background:var(--zap);border:4px solid var(--ink);box-shadow:var(--panel-shadow);padding:8px 12px;margin-bottom:14px}
+  .rangebar .lab{font-family:'Bangers',cursive;font-size:1.15rem;letter-spacing:.5px}
+  .navb{font-family:'Bangers',cursive;font-size:1.4rem;background:#fff;border:3px solid var(--ink);width:38px;height:38px;cursor:pointer;line-height:1}
+  .navb:active{transform:translate(1px,1px)}
+  .navb:disabled{opacity:.3;cursor:default}
+
+  /* habit grid */
+  .gridwrap{overflow-x:auto;border:4px solid var(--ink);box-shadow:var(--panel-shadow);background:#fff}
+  table{border-collapse:collapse;width:100%;min-width:520px}
+  th,td{border:1px solid #d9d2be;text-align:center}
+  thead th{background:var(--ink);color:var(--paper);font-size:.62rem;font-weight:900;padding:6px 2px;line-height:1.1;position:sticky;top:0}
+  thead th.corner{background:var(--ink);text-align:left;padding-left:10px;min-width:120px;font-size:.72rem}
+  thead th.wknd{background:#3a3550}
+  tbody th{text-align:left;font-size:.8rem;font-weight:900;padding:8px 10px;background:var(--paper);white-space:nowrap;position:sticky;left:0}
+  tbody td{width:30px;height:34px;cursor:pointer}
+  tbody td .dot{width:18px;height:18px;margin:auto;border-radius:4px;border:2px solid var(--ink);background:#fff;transition:background .15s}
+  tbody td.hit .dot{background:var(--done)}
+  tbody td.todaycol{outline:2px solid var(--pow);outline-offset:-2px}
+  .rowrate{font-family:'Bangers',cursive;font-size:.95rem;padding:0 8px;background:var(--paper);color:var(--pow)}
+  .hint{font-weight:700;font-size:.72rem;opacity:.55;margin-top:12px;text-align:center}
+
+  .reset{display:block;margin:30px auto 0;background:none;border:none;font-family:'Nunito';font-weight:900;font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;opacity:.4;cursor:pointer;text-decoration:underline}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Hannah's Day</h1>
+    <div class="date" id="date"></div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-v="today">Today</div>
+    <div class="tab" data-v="history">My Habits</div>
+  </div>
+
+  <!-- TODAY -->
+  <div class="view on" id="v-today">
+    <div class="meter" id="meter"></div>
+    <ul id="list"></ul>
+    <div class="finish" id="finish">All done! Nice work!</div>
+    <button class="reset" id="reset">start today over</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="view" id="v-history">
+    <div class="streaks">
+      <div class="streak"><div class="num" id="curStreak">0</div><div class="lbl">Day Streak</div></div>
+      <div class="streak alt"><div class="num" id="totDays">0</div><div class="lbl">Perfect Days</div></div>
+    </div>
+    <div class="rangebar">
+      <button class="navb" id="prev">‹</button>
+      <div class="lab" id="rangeLabel"></div>
+      <button class="navb" id="next">›</button>
+    </div>
+    <div class="gridwrap">
+      <table id="habitTable"></table>
+    </div>
+    <div class="hint">Tap any square to fix a past day. Scroll ‹ › for earlier weeks.</div>
+  </div>
+</div>
+
+<script>
+const TASKS=[
+  {id:'read',   name:'Read on my own',short:'Read',   note:'30 minutes'},
+  {id:'khan',   name:'Khan Academy',  short:'Khan',   note:'30 minutes'},
+  {id:'vocab',  name:'Vocabulary',    short:'Vocab',  note:'15 minutes'},
+  {id:'korean', name:'Korean',        short:'Korean', note:''},
+  {id:'cursive',name:'Cursive',       short:'Cursive',note:'1 page'},
+  {id:'drill',  name:'Math drill',    short:'Math',   note:''},
+  {id:'clean',  name:'Clean up',      short:'Clean',  note:'15 minutes'},
+];
+const TOTAL=TASKS.length;
+const WINDOW=14;                 // days shown per screen
+
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=new Date(); today.setHours(0,0,0,0);
+const todayKey=keyOf(today);
+
+document.getElementById('date').textContent=
+  today.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+
+// records: { 'YYYY-MM-DD': { taskid:true, ... } }
+let records={};
+
+const list=document.getElementById('list');
+const meter=document.getElementById('meter');
+const finish=document.getElementById('finish');
+
+TASKS.forEach(t=>{
+  const li=document.createElement('li');li.dataset.id=t.id;
+  li.innerHTML=`<div class="box">✔</div><div class="task">${t.name}${t.note?`<span class="mins">${t.note}</span>`:''}</div>`;
+  li.addEventListener('click',()=>toggleToday(t.id));
+  list.appendChild(li);
+  const pip=document.createElement('div');pip.className='pip';pip.dataset.id=t.id;meter.appendChild(pip);
+});
+
+function dayCount(k){const r=records[k];return r?Object.values(r).filter(Boolean).length:0;}
+
+function paintToday(){
+  const r=records[todayKey]||{};
+  let c=0;
+  TASKS.forEach(t=>{
+    const on=!!r[t.id]; if(on)c++;
+    list.querySelector(`li[data-id="${t.id}"]`).classList.toggle('done',on);
+    meter.querySelector(`.pip[data-id="${t.id}"]`).classList.toggle('lit',on);
+  });
+  finish.classList.toggle('show',c===TOTAL);
+}
+
+async function save(){
+  try{ await window.storage.set('records', JSON.stringify(records)); }catch(e){}
+}
+
+async function toggleToday(id){
+  if(!records[todayKey])records[todayKey]={};
+  records[todayKey][id]=!records[todayKey][id];
+  paintToday(); save();
+}
+
+document.getElementById('reset').addEventListener('click',async()=>{
+  records[todayKey]={};
+  paintToday(); save();
+});
+
+// tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const v=tab.dataset.v;
+    document.getElementById('v-today').classList.toggle('on',v==='today');
+    document.getElementById('v-history').classList.toggle('on',v==='history');
+    if(v==='history') renderHabits();
+  });
+});
+
+// ---- habit grid ----
+let offset=0; // 0 = most recent window; +1 = one window earlier
+const DOWS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function windowDays(){
+  // returns array of Date objects, oldest->newest, for current offset
+  const days=[];
+  const end=new Date(today); end.setDate(end.getDate()-offset*WINDOW);
+  for(let i=WINDOW-1;i>=0;i--){const d=new Date(end);d.setDate(end.getDate()-i);days.push(d);}
+  return days;
+}
+
+function computeStreak(){
+  let s=0,d=new Date(today);
+  if(dayCount(todayKey)<TOTAL)d.setDate(d.getDate()-1);
+  while(dayCount(keyOf(d))===TOTAL){s++;d.setDate(d.getDate()-1);}
+  return s;
+}
+
+function renderHabits(){
+  document.getElementById('totDays').textContent=
+    Object.keys(records).filter(k=>dayCount(k)===TOTAL).length;
+  document.getElementById('curStreak').textContent=computeStreak();
+
+  const days=windowDays();
+  const first=days[0], last=days[days.length-1];
+  const fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  document.getElementById('rangeLabel').textContent=`${fmt(first)} – ${fmt(last)}`;
+  document.getElementById('next').disabled = offset===0;
+
+  const table=document.getElementById('habitTable');
+  // header
+  let html='<thead><tr><th class="corner">Task</th>';
+  days.forEach(d=>{
+    const wk=(d.getDay()===0||d.getDay()===6)?' wknd':'';
+    html+=`<th class="${wk.trim()}">${DOWS[d.getDay()][0]}<br>${d.getDate()}</th>`;
+  });
+  html+='<th class="corner" style="min-width:44px">%</th></tr></thead><tbody>';
+  // rows
+  TASKS.forEach(t=>{
+    html+=`<tr><th>${t.name}</th>`;
+    let hits=0;
+    days.forEach(d=>{
+      const k=keyOf(d);
+      const on=!!(records[k]&&records[k][t.id]);
+      if(on)hits++;
+      const tc=(k===todayKey)?' todaycol':'';
+      html+=`<td class="${on?'hit':''}${tc}" data-key="${k}" data-task="${t.id}"><div class="dot"></div></td>`;
+    });
+    const rate=Math.round(hits/days.length*100);
+    html+=`<td class="rowrate">${rate}</td></tr>`;
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+
+  table.querySelectorAll('td[data-key]').forEach(td=>{
+    td.addEventListener('click',()=>{
+      const k=td.dataset.key, id=td.dataset.task;
+      if(!records[k])records[k]={};
+      records[k][id]=!records[k][id];
+      save();
+      if(k===todayKey)paintToday();
+      renderHabits();
+    });
+  });
+}
+
+document.getElementById('prev').addEventListener('click',()=>{offset++;renderHabits();});
+document.getElementById('next').addEventListener('click',()=>{if(offset>0){offset--;renderHabits();}});
+
+// ---- load ----
+(async()=>{
+  try{
+    const r=await window.storage.get('records');
+    if(r&&r.value) records=JSON.parse(r.value);
+  }catch(e){ records={}; }
+  paintToday();
+})();
+</script>
+</body>
+</html>
