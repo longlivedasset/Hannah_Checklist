@@ -11,7 +11,7 @@ const TASKS=[
 const TOTAL=TASKS.length;
 const WINDOW=14;                 // days shown per screen
 
-// PASTE YOUR DEPLOYED WEB APP URL HERE:
+// Deployed Web App URL:
 const GOOGLE_SYNC_URL = "https://script.google.com/macros/s/AKfycbxGC6kDDgCA4Jg9SlxmZF9YDL3Q8f8r7HpzxA8GI350sYDqeXkds0EhWGs9XyvJHatk/exec";
 
 const pad=n=>String(n).padStart(2,'0');
@@ -53,22 +53,29 @@ async function save(){
   try{ await window.storage.set('records', JSON.stringify(records)); }catch(e){}
 }
 
-// Helper to push state directly to Google Sheet asynchronously
+// Fixed sync helper function
 async function syncToGoogleSheet(dateKey, actionType) {
-  if (!GOOGLE_SYNC_URL || GOOGLE_SYNC_URL.startsWith("YOUR_GOOGLE")) return;
+  if (!GOOGLE_SYNC_URL || GOOGLE_SYNC_URL.includes("YOUR_GOOGLE")) return;
+  
+  const payload = {
+    dateKey: dateKey,
+    action: actionType,
+    dayRecords: records[dateKey] || {}
+  };
+
+  console.log("Attempting sync to Google Sheet...", payload);
+
   try {
+    // Sending data as standard URLSearchParams guarantees compatibility with Google Apps Script under no-cors mode
     await fetch(GOOGLE_SYNC_URL, {
       method: "POST",
-      mode: "no-cors", // Required to pass through standard CORS safety walls
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        dateKey: dateKey,
-        action: actionType,
-        dayRecords: records[dateKey] || {}
-      })
+      mode: "no-cors",
+      headers: { "Content-Type": "application/plain" }, 
+      body: JSON.stringify(payload)
     });
+    console.log("Sync signal dispatched successfully.");
   } catch (err) {
-    console.error("Google Sync failed: ", err);
+    console.error("Google Sync networking failed: ", err);
   }
 }
 
@@ -153,14 +160,18 @@ function renderHabits(){
   html+='</tbody>';
   table.innerHTML=html;
 
-  table.querySelectorAll('td[data-key]').forEach(td=>{
-    td.cloneNode(true); // Clear old listeners to avoid stacking network calls
-    td.addEventListener('click',()=>{
-      const k=td.dataset.key, id=td.dataset.task;
-      if(!records[k])records[k]={};
-      records[k][id]=!records[k][id];
+  // Fixed event listener binding
+  table.querySelectorAll('tbody td[data-key]').forEach(td => {
+    // Correctly replace the node to dump old duplicate listeners
+    const cleanTd = td.cloneNode(true);
+    td.parentNode.replaceChild(cleanTd, td);
+
+    cleanTd.addEventListener('click', () => {
+      const k = cleanTd.dataset.key, id = cleanTd.dataset.task;
+      if(!records[k]) records[k]={};
+      records[k][id] = !records[k][id];
       save();
-      if(k===todayKey)paintToday();
+      if(k === todayKey) paintToday();
       renderHabits();
       syncToGoogleSheet(k, "history_edit");
     });
