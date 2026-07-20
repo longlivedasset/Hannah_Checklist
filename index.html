@@ -53,27 +53,29 @@ async function save(){
   try{ await window.storage.set('records', JSON.stringify(records)); }catch(e){}
 }
 
-// Fixed sync helper function
 async function syncToGoogleSheet(dateKey, actionType) {
   if (!GOOGLE_SYNC_URL || GOOGLE_SYNC_URL.includes("YOUR_GOOGLE")) return;
-  
-  const payload = {
+
+  const r = records[dateKey] || {};
+
+  // Query params match the Apps Script's e.parameter names exactly
+  const params = new URLSearchParams({
     dateKey: dateKey,
     action: actionType,
-    dayRecords: records[dateKey] || {}
-  };
-
-  console.log("Attempting sync to Google Sheet...", payload);
+    read: r.read ? 1 : 0,
+    khan: r.khan ? 1 : 0,
+    vocab: r.vocab ? 1 : 0,
+    korean: r.korean ? 1 : 0,
+    cursive: r.cursive ? 1 : 0,
+    drill: r.drill ? 1 : 0,
+    clean: r.clean ? 1 : 0
+  });
 
   try {
-    // Sending data as standard URLSearchParams guarantees compatibility with Google Apps Script under no-cors mode
-    await fetch(GOOGLE_SYNC_URL, {
+    await fetch(`${GOOGLE_SYNC_URL}?${params.toString()}`, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/plain" }, 
-      body: JSON.stringify(payload)
+      mode: "no-cors"
     });
-    console.log("Sync signal dispatched successfully.");
   } catch (err) {
     console.error("Google Sync networking failed: ", err);
   }
@@ -136,14 +138,12 @@ function renderHabits(){
   document.getElementById('next').disabled = offset===0;
 
   const table=document.getElementById('habitTable');
-  // header
   let html='<thead><tr><th class="corner">Task</th>';
   days.forEach(d=>{
     const wk=(d.getDay()===0||d.getDay()===6)?' wknd':'';
     html+=`<th class="${wk.trim()}">${DOWS[d.getDay()][0]}<br>${d.getDate()}</th>`;
   });
   html+='<th class="corner" style="min-width:44px">%</th></tr></thead><tbody>';
-  // rows
   TASKS.forEach(t=>{
     html+=`<tr><th>${t.name}</th>`;
     let hits=0;
@@ -160,9 +160,7 @@ function renderHabits(){
   html+='</tbody>';
   table.innerHTML=html;
 
-  // Fixed event listener binding
   table.querySelectorAll('tbody td[data-key]').forEach(td => {
-    // Correctly replace the node to dump old duplicate listeners
     const cleanTd = td.cloneNode(true);
     td.parentNode.replaceChild(cleanTd, td);
 
